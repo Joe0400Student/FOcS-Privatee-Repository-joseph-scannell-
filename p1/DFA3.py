@@ -11,6 +11,6 @@ def generate_dfa_of_char(c: char, a: alphabet):{
     DFA1.add_next_table({g: DFA2 if g == c else DFA3 for g in a})
     DFA2.add_next_table({g: DFA3 for g in a})
     DFA3.add_next_table({g: DFA3 for g in a})
-    return [DFA1,DFA2,DFA3]
+    return DFA1
     
 
