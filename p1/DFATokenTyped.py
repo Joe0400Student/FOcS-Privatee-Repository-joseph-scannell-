@@ -11,8 +11,8 @@ def generate_int_dfa(a: alphabet):
 	
 	dfaA_after_space = DFA(True)
 	dfaA_after_space.add_next_table({g: dfaA_after_space for g in a})
-	
-	#int half
+
+
 	dfai1 = DFA(False)
 	dfai2 = DFA(False)
 	dfai3 = DFA(True)
