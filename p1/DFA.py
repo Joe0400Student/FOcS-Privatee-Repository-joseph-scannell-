@@ -9,5 +9,5 @@ class DFA:
     def add_next_table(self, table):
         self.next_table = table
     
-    def accepting(self) -> bool:
+    def accepting(self):
         return self.accepted

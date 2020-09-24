@@ -8,6 +8,7 @@ begin = DFA(False)
 begin.add_next_table({letter: begin for letter in alphabet})
 
 for each in IterateString(alphabet):
+    input()
     cur_state = begin
     for c in each:
         cur_state = cur_state.next(c)

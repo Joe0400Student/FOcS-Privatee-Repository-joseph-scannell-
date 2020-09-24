@@ -3,7 +3,7 @@ from char import char
 from str import string
 from alphabet import alphabet
 
-def generate_dfa_of_char(c: char, a: alphabet):{
+def generate_dfa_of_char(c: char, a: alphabet):
     
     DFA1 = DFA(False)
     DFA2 = DFA(True)
@@ -13,4 +13,13 @@ def generate_dfa_of_char(c: char, a: alphabet):{
     DFA3.add_next_table({g: DFA3 for g in a})
     return DFA1
     
+
+begin = generate_dfa_of_char("a","abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+while (True):
+    a = input()
+    node = begin
+    for c in a:
+        node = node.next(c)
+    print(node.accepting())
 
