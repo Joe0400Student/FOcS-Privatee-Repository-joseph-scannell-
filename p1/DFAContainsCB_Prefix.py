@@ -30,6 +30,7 @@ test_cases = [
 	"", #shoulndt as no cb prefix
 	"bccb", #should as it contains a cb prefix"
 	"bbcb", #should as it contains a cb prefix"
+	"cbcb" #should as it contains a cb prefix
 ]
 for test in test_cases:
 	test_node = node

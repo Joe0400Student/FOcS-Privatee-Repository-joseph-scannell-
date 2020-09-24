@@ -29,8 +29,18 @@ test_cases = [
 		#shouldnt as it doesnt contain a def between spaces"
 	"class test{ public static void main(int argv, String argc[]){ do_something();} }",
 		#shouldnt as it doesnt contain a def kword"
-	"the keyword for define class-functions or methods in python is def"
+	"the keyword for define class-functions or methods in python is def",
 		#should as it contains a def kword"
+	"def is the kword for function declaration in python",
+		#should as it contains a def kword"
+	"def __repr__(self): pass",
+		#should as it contains a def kword"
+	"define void in a language",
+		#should not as it doesnt contain a def kword"
+	"deffering tasks",
+		#should not as it doesnt contain a def kword"
+	"function main(){}"
+		#should not as it doesnt contain a def kword"
 ]
 
 node_begin = dfa_kword()
