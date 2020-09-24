@@ -31,7 +31,12 @@ test_cases = [
 	"int()", #should fail, function"
 	"int a", #should work, int type
 	"integers are a type of number", #should fail 
-	"public static void main(){}" #should fail
+	"public static void main(){}", #should fail
+	"Int", #it is not int, so it should fail
+	"int is a type in c", #it should work
+	"int is used in java as well", #it should work
+	"int type is used in java as a primitve but Integer is a object type", #it should work
+	"int is however a specific size in many langs to 4 bytes" #it should work
 ]
 
 for test in test_cases:

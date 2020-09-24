@@ -17,7 +17,10 @@ test_cases = [
 	"even", #returns false
 	"toyota", #returns false
 	"nissan", #returns false
-	"yorha" #returns true
+	"yorha", #returns true
+	"tests", #returns true
+	"even numbers", #returns false
+	"evens exists" #returns false
 ]
 node = dfa_odd()
 

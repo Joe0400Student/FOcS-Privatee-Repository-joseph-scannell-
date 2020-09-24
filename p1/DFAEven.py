@@ -7,9 +7,8 @@ def generate_dfa_for_even_length(a):
 	dfa1.add_next_table({g: dfa2 for g in a})
 	dfa2.add_next_table({g: dfa1 for g in a})
 	return dfa1
-
-node = generate_dfa_for_even_length("abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ ;:'\"\\[]{},.<>/?!@#$%^&*()-=_+`~")
-
+alphabet = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ ;:'\"\\[]{},.<>/?!@#$%^&*()-=_+`~"
+node = generate_dfa_for_even_length(alphabet)
 test_cases = [
 	"even", #should be true, as it is even length
 		#even->odd->even->odd->even
@@ -19,6 +18,12 @@ test_cases = [
 	"True", #should be true
 	"false", #should be false
 	"rand", #should be true
+	"even characters ", #should be true
+	"odd characters ", #should be false
+	"odd numbers ", #should be false
+	"even numbers ", #should be true
+	"lets", #should be true
+	"let" #should be false
 ]
 
 for test in test_cases:

@@ -28,6 +28,12 @@ test_cases = [
 	"the speedy car drives quickly", # accepts
 	"tooling is expensive for manufacturing", #accepts
 	"toyota mr2", #fails
+	"food is good", #accepts
+	"oo is a double o", #accepts
+	"you hear wee from a roller coaster", #accepts
+	"great things start slowly", #fails
+	"DFAs are fun", #fails
+	"it is simple and effective" #fails
 ]
 
 for test in test_cases:

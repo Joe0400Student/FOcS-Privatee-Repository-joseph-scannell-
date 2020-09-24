@@ -18,9 +18,13 @@ test_cases = [
 	"11", #should be true"
 	"00", #should be true"
 	"101", #should be true"
-	"111", #should be true
-	"10", #should be false
 	"111", #should be false
+	"10", #should be false
+	"110", #should be true"
+	"10110", #should be false
+	"1010", #should be true
+	"10101100", #should be true
+	"10101000" #should be false
 ]
 
 node = make_even_dfa()
