@@ -24,5 +24,6 @@ class DFA:
         
         return '->'.join(positions + [str(DFA_node)])
 
-
-
+    def __invert__(self):
+        self.accepted = not self.accepted
+        return self
