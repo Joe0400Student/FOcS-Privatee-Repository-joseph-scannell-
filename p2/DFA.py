@@ -1,4 +1,5 @@
 from typing import List
+import string
 
 cart_prod = lambda A,B: [(a,b) for a in A for b in B]
 
@@ -30,7 +31,13 @@ class DFA:
     def __or__(self, other):
         Q = cart_prod(self.Q,other.Q)
         alpha = union(self.alpha,other.alpha)
-        TF = [(lambda a : self.TF[self.Q.index(R1)](a)*len(other.Q)+other.TF[other.Q.index(R2)](a)) for R1,R2 in Q]
+        TF = [
+                (lambda a : 
+                    self.TF[ self.Q.index(R1) ](a) * len(other.Q) + 
+                    other.TF[ other.Q.index(R2) ](a)
+                )
+                for R1,R2 in Q
+            ]
         SS = self.SS*len(other.Q) + other.SS
         AS = [self.AS[self.Q.index(a[0])] or other.AS[other.Q.index(a[1])] for a in Q]
         return DFA(Q,alpha,TF,SS,AS)
@@ -43,6 +50,7 @@ class DFA:
     
     def __eq__(self,other):
         return self <= other and other <= self
+
 
 ## DFA worker was orignially gonna be BFS, but hard so no...
 
@@ -59,18 +67,60 @@ def DFS(dfa,State=None,previous_states=[],visited_chars=[]):
                 return v
     return False
 
-empty = DFA(["0","1"],['0','1'],[(lambda a: 1 if a == '1' else 0),(lambda a: 1 if a == '0' else 1)],0,[True,False])
+odd = DFA(
+    ["0","1"],
+    ['0','1'],
+    [
+        (lambda a: 1 if a == '1' else 0),
+        (lambda a: 1 if a == '0' else 0)
+    ],
+    0,
+    [True,False]
+)
+dog = DFA(
+    ["q_None","q_D","q_O","q_G"],
+    string.ascii_lowercase,
+    [
+        (lambda a: 1 if a == 'd' else 0),
+        (lambda a: 1 if a == 'd' else 2 if a == 'o' else 0),
+        (lambda a: 1 if a == 'd' else 3 if a == 'g' else 0),
+        (lambda a: 3)
+    ],
+    0,
+    [False,False,False,True]
+)
+even = ~odd
+not_dog = ~dog
+cat = DFA(
+    ["q_None","q_C","q_A","q_T"],
+    string.ascii_lowercase,
+    [
+        (lambda a: 1 if a == 'c' else 0),
+        (lambda a: 1 if a == 'c' else 2 if a == 'a' else 0),
+        (lambda a: 1 if a == 'c' else 3 if a == 't' else 0),
+        (lambda a: 3)
+    ],
+    0,
+    [False,False,False,True]
+)
+not_cat = ~cat
+cat_or_dog = cat | dog
+not_cat_and_not_dog = ~cat & ~dog
 
 
-print(DFS(empty))
-print(DFS(~empty))
-print(DFS(empty | empty))
-print(DFS(empty | ~empty))
-print(DFS(empty & empty))
-print(f"DFS(empty & ~empty):{DFS(empty & ~empty)}")
-print(f"empty <= empty:{empty <= empty}")
-print(f"emtpy <= ~emtpy:{empty <= ~empty}")
-print(f"empty == empty:{empty == empty}")
-print(f"empty == ~empty:{empty == ~empty}")
 
-print(empty.__repr__("01"))
+
+print(DFS(dog))
+
+print(DFS(odd))
+print(DFS(~odd))
+print(DFS(odd | odd))
+print(DFS(odd | ~odd))
+print(DFS(odd & odd))
+print(f"DFS(odd & ~odd):{DFS(odd & ~odd)}")
+print(f"odd <= odd:{odd <= odd}")
+print(f"emtpy <= ~emtpy:{odd <= ~odd}")
+print(f"odd == odd:{odd == odd}")
+print(f"odd == ~odd:{odd == ~odd}")
+
+print(odd.__repr__("01"))
