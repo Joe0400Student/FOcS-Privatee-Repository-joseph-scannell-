@@ -1,0 +1,8 @@
+import DFA as DFA
+
+
+class DFAContainer:
+
+    starting = None
+    
+    
