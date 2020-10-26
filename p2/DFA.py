@@ -39,7 +39,7 @@ class DFA:
         return ~((~self)|(~other))
     
     def __le__(self,other):
-        return DFS(self & ~other) == False
+        return DFS(self & ~other, (self & ~other).SS,[],[]) == False
     
     def __eq__(self,other):
         return self <= other and other <= self
@@ -172,8 +172,16 @@ def test_subset():
     assert (not ~cat <= cat), "~cat says its a subset of cat"
     assert (not ~dog <= dog), "~dog says its a subset of dog"
     assert (not dog <= (cat & dog)), "dog says it s asubset of cat-dog"
-    assert ((dog | cat) <= dog), "dog|cat says its a subset of dog"
-
+    assert (dog <= (dog | cat)), "dog|cat says its a subset of dog"
+@decorate("TEST_EQUALITY")
+def test_equality():
+    assert not dog == cat, "dog is saying its a cat"
+    assert not cat == dog, "cat is saying its a dog"
+    assert dog == dog, "dog is saying its not a dog"
+    assert cat == cat, "cat is saying its not a cat"
+    assert not dog == ~dog, "dog is saying its equal to not dog"
+    assert not cat == ~cat, "cat is saying its equal to not cat"
+    assert cat & dog == cat & dog, "cat-dog is saying its not cat-dog"
 @decorate("TEST_SUITE",True)
 def all_tests():
     test_DFS()
@@ -181,5 +189,6 @@ def all_tests():
     test_union()
     test_intersect()
     test_subset()
+    test_equality()
 
 all_tests()
