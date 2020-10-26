@@ -1,4 +1,5 @@
 import string
+import math
 
 cart_prod = lambda A,B: [(a,b) for a in A for b in B]
 
@@ -101,11 +102,32 @@ DFANone = DFA(
     "D_None",
     {"D_None":False}
 )
+
+def decorate(s,final=False):
+    a = "".join(["=" for i in range(50)])
+    spaces = " ".join(['' for i in range(100)])
+    def wrap(func):
+        def _():
+            print(f"{a}{s}{a}"[math.floor(len(s)/2):-math.ceil(len(s)/2)-2]+"\\\\")
+            try:
+                func()
+                print(f"||{s} PASSED{''.join([' ' for i in range(100)])}"[:98]+"||")
+            except AssertionError as e:
+                print(f"||AssertionError: {e}{spaces}"[:98]+"||")
+                if(not final):
+                    assert False, f"{s}: {e}"
+            finally:
+                print("\\\\" + "".join(["_" for i in range(100)])[2:])
+        return _
+    return wrap
+
+@decorate("DFS_TEST")
 def test_DFS():
     assert (DFS(dog) == "\"dog\""), "DFS returned not a dog string"
     assert (DFS(DFANone) == False), "DFS Returned a string when it should not have"
     assert (DFS(~DFANone) == "\"\"") ,"DFS Returned not an empty string when it should have"
 
+@decorate("TEST_COMPLEMEMT")
 def test_complement():
     assert ((~dog).iterate_DFA("dog") == False), "Returned True on \"dog\" dog complement"
     assert ((~dog).iterate_DFA("doo") == True), "Returned False on \"do\" dog compliment"
@@ -117,6 +139,7 @@ def test_complement():
     assert ((~odd).iterate_DFA("11") == True), "Returend False on \"11\" odd complment"
     assert ((~(~odd)) == odd), "Returned rthat odd complement complement is not equal to odd"
 
+@decorate("TEST_UNION")
 def test_union():
     assert ((dog | cat).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union cat"
     assert ((dog | cat).iterate_DFA("cat") == True), "Returned False on \"cat\" dog union cat"
@@ -128,6 +151,7 @@ def test_union():
     assert ((dog |~cat).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union complement cat"
     assert ((dog |~cat).iterate_DFA("doo") == True), "Returned False on \"doo\" dog union complement cat"
 
+@decorate("TEST_INTERSECT")
 def test_intersect():
     assert ((dog & cat).iterate_DFA("dogcat") == True), "Returned False on \"dogcat\" on dog intersect cat"
     assert ((dog & cat).iterate_DFA("catdog") == True), "Catdog doesnt exist.... "
@@ -138,10 +162,24 @@ def test_intersect():
     assert ((dog & dog) == dog), "Returned that dog & dog != dog"
     assert ((dog & cat) <= dog), "returned that dog & cat isnt a subset of dog"
 
+@decorate("TEST_SUBSET")
 def test_subset():
-    
+    assert ((dog & cat) <= dog), "dog and cat say they arent a subset of dog"
+    assert (dog <= (dog | cat)), "dog says its not a subset of dog or cat"
+    assert (not cat <= dog), "cat says its a subset of dog"
+    assert (not dog <= cat), "dog says its a subset of cat"
+    assert (cat <= cat), "cat says its not a subseet of cat"
+    assert (not ~cat <= cat), "~cat says its a subset of cat"
+    assert (not ~dog <= dog), "~dog says its a subset of dog"
+    assert (not dog <= (cat & dog)), "dog says it s asubset of cat-dog"
+    assert ((dog | cat) <= dog), "dog|cat says its a subset of dog"
 
-test_DFS()
-test_complement()
-test_union()
-test_intersect()
+@decorate("TEST_SUITE",True)
+def all_tests():
+    test_DFS()
+    test_complement()
+    test_union()
+    test_intersect()
+    test_subset()
+
+all_tests()

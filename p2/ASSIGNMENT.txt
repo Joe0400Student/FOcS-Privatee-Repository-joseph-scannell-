@@ -1,16 +1,1 @@
-assignment1:char.py
-assignment2:str.py
-assignment3:FindN.py
-assignment4:DFA.py
-assignment5:DFA1.py
-assignment6:DFA2.py
-assignment7:DFA3.py
-assignment8/9:[DFAContainsCB_Prefix.py,
-               DFAdef.py,
-               DFAdouble01end.py,
-               DFADoubles.py,
-               DFAEvenBinary.py,
-               DFAEven.py,
-               DFAint.py,
-               DFAOdd.py]
-assignment10:DFATester.py
+assignment:11-20
