@@ -1,11 +1,8 @@
-from typing import List
 import string
 
 cart_prod = lambda A,B: [(a,b) for a in A for b in B]
 
 union = lambda A,B: list(set(A) | set(B))
-
-
 
 class DFA:
     
@@ -15,7 +12,6 @@ class DFA:
     def __repr__(self, string_to_iterate):
         state = self.SS
         s = state
-#        print(state)
         for c in string_to_iterate:
             s += (state := self.TF[state][c])
         return '->'.join(s)
@@ -33,9 +29,9 @@ class DFA:
     def __or__(self, other):
         Q = cart_prod(self.Q,other.Q)
         alpha = union(self.alpha,other.alpha)
-        TF = {(a,b) : { A: (self.TF[a][A],other.TF[b][A]) for A in alpha } for a,b in Q}
+        TF = { (a,b) : { c: (self.TF[a][c],other.TF[b][c]) for c in alpha } for a,b in Q }
         SS = (self.SS,other.SS)
-        AS = {(a,b):self.AS[a] or other.AS[b] for a,b in Q}
+        AS = { (a,b) : self.AS[a] or other.AS[b] for a,b in Q }
         return DFA(Q,alpha,TF,SS,AS)
     
     def __and__(self,other):
@@ -85,8 +81,6 @@ dog = DFA(
     "q_None",
     {"q_None":False,"q_D":False,"q_O":False,"q_G":True}
 )
-even = ~odd
-not_dog = ~dog
 cat = DFA(
     ["q_None","q_C","q_A","q_T"],
     string.ascii_lowercase,
@@ -99,25 +93,55 @@ cat = DFA(
     "q_None",
     {"q_None":False,"q_C":False,"q_A":False,"q_T":True}
 )
-not_cat = ~cat
-cat_or_dog = cat | dog
-not_cat_and_not_dog = ~cat & ~dog
 
-print(cat_or_dog.iterate_DFA("ddd"))
-print(cat_or_dog.__repr__("ddd"))
+DFANone = DFA(
+    ["D_None"],
+    "01",
+    {"D_None":{"0":"D_None","1":"D_None"}},
+    "D_None",
+    {"D_None":False}
+)
+def test_DFS():
+    assert (DFS(dog) == "\"dog\""), "DFS returned not a dog string"
+    assert (DFS(DFANone) == False), "DFS Returned a string when it should not have"
+    assert (DFS(~DFANone) == "\"\"") ,"DFS Returned not an empty string when it should have"
 
+def test_complement():
+    assert ((~dog).iterate_DFA("dog") == False), "Returned True on \"dog\" dog complement"
+    assert ((~dog).iterate_DFA("doo") == True), "Returned False on \"do\" dog compliment"
+    assert ((~(~dog)) == dog), "Returned that dog complement complement is not equal to dog"
+    assert ((~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" cat complement"
+    assert ((~cat).iterate_DFA("caa") == True), "Returned False on \"caa\" cat complement"
+    assert ((~(~cat)) == cat), "Returned that cat complement complement is not equal to cat"
+    assert ((~odd).iterate_DFA("1") == False), "Returned True on \"1\" odd complement"
+    assert ((~odd).iterate_DFA("11") == True), "Returend False on \"11\" odd complment"
+    assert ((~(~odd)) == odd), "Returned rthat odd complement complement is not equal to odd"
 
-print(f"DFS(dog):{DFS(dog)}")
+def test_union():
+    assert ((dog | cat).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union cat"
+    assert ((dog | cat).iterate_DFA("cat") == True), "Returned False on \"cat\" dog union cat"
+    assert ((dog |~dog).iterate_DFA("") == True), "Returned False on \"\" dog union complement dog"
+    assert ((dog |~dog).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union complement dog"
+    assert ((cat |~cat).iterate_DFA("") == True), "Returned False on \"\" cat union complement cat"
+    assert ((cat |~cat).iterate_DFA("cat") == True), "Returned False on \"cat\" cat union complement cat"
+    assert ((dog |~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" dog union complement cat"
+    assert ((dog |~cat).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union complement cat"
+    assert ((dog |~cat).iterate_DFA("doo") == True), "Returned False on \"doo\" dog union complement cat"
 
-print(f"DFS(odd):{DFS(odd)}")
-print(f"DFS(~odd):{DFS(~odd)}")
-print(f"DFS(odd | odd):{DFS(odd | odd)}")
-print(f"DFS(odd | ~odd):{DFS(odd | ~odd)}")
-print(f"DFS(odd & odd):{DFS(odd & odd)}")
-print(f"DFS(odd & ~odd):{DFS(odd & ~odd)}")
-print(f"odd <= odd:{odd <= odd}")
-print(f"emtpy <= ~emtpy:{odd <= ~odd}")
-print(f"odd == odd:{odd == odd}")
-print(f"odd == ~odd:{odd == ~odd}")
+def test_intersect():
+    assert ((dog & cat).iterate_DFA("dogcat") == True), "Returned False on \"dogcat\" on dog intersect cat"
+    assert ((dog & cat).iterate_DFA("catdog") == True), "Catdog doesnt exist.... "
+    assert ((dog & ~cat).iterate_DFA("dog") == True), "Returned False on \"dog\" on dog intersect complement cat"
+    assert ((dog & ~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" on dog intersect complement cat"
+    assert ((~dog & ~cat).iterate_DFA("cado") == True), "Returned False on \"cado\" on complement cat intersect complement dog"
+    assert ((~dog & ~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" on complement cat intersect complement dog"
+    assert ((dog & dog) == dog), "Returned that dog & dog != dog"
+    assert ((dog & cat) <= dog), "returned that dog & cat isnt a subset of dog"
 
-print(odd.__repr__("01"))
+def test_subset():
+    
+
+test_DFS()
+test_complement()
+test_union()
+test_intersect()
