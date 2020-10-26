@@ -12,10 +12,10 @@ class DFA:
     
     def __repr__(self, string_to_iterate):
         state = self.SS
-        s = state
+        visited = [state]
         for c in string_to_iterate:
-            s += (state := self.TF[state][c])
-        return '->'.join(s)
+            visited += (state := self.TF[state][c])
+        return '->'.join(visited)
     
     def iterate_DFA(self,string_to_iterate):
         state = self.SS
