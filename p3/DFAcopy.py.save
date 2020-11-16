@@ -1,0 +1,195 @@
+import string
+import math
+
+cart_prod = lambda A,B: [(a,b) for a in A for b in B]
+
+union = lambda A,B: list(set(A) | set(B))
+
+class DFA:
+    
+    def __init__(self, Q, alpha, TF, SS, AS):
+        self.Q, self.alpha, self.TF, self.SS, self.AS = Q, alpha, TF, SS, AS
+    
+    def __repr__(self, string_to_iterate):
+        state = self.SS
+        visited = [state]
+        for c in string_to_iterate:
+            visited += (state := self.TF[state][c])
+        return '->'.join(visited)
+    
+    def iterate_DFA(self,string_to_iterate):
+        state = self.SS
+        for c in string_to_iterate:
+            state = self.TF[state][c]
+        return self.AS[state]
+    
+    def __invert__(self):
+        AS = {a:not self.AS[a] for a in self.Q}
+        return DFA(self.Q,self.alpha,self.TF,self.SS,AS)
+    
+    def __or__(self, other):
+        Q = cart_prod(self.Q,other.Q)
+        alpha = union(self.alpha,other.alpha)
+        
+        TF = { (a,b) : { c: (self.TF[a][c],other.TF[b][c]) for c in alpha } for a,b in Q }
+        SS = (self.SS,other.SS)
+        AS = { (a,b) : self.AS[a] or other.AS[b] for a,b in Q }
+        return DFA(Q,alpha,TF,SS,AS)
+    
+    def __and__(self,other):
+        return ~((~self)|(~other))
+    
+    def __le__(self,other):
+        return DFS(self & ~other, (self & ~other).SS,[],[]) == False
+    
+    def __eq__(self,other):
+        return self <= other and other <= self
+
+
+## DFA worker was orignially gonna be BFS, but hard so no...
+
+def DFS(dfa,State=None,previous_states=[],visited_chars=[]):
+    if(State == None):
+        State = dfa.SS
+    if(dfa.AS[State]):
+        return f"\"{''.join(visited_chars)}\""
+    previous_states.append(State)
+    for c in dfa.alpha:
+        if(dfa.TF[State][c] not in previous_states):
+            val = DFS(dfa,dfa.TF[State][c],previous_states,visited_chars + [c])
+            if(False != val):
+                return val
+    return False
+
+odd = DFA(
+    ["d0","d1"],
+    ['0','1'],
+    {
+        "d0":{"0":"d0","1":"d1"},
+        "d1":{"0":"d1","1":"d0"}
+    },
+    "d0",
+    {"d0":False,"d1":True}
+)
+dog = DFA(
+    ["q_None","q_D","q_O","q_G"],
+    string.ascii_lowercase,
+    {
+        "q_None":{a:"q_D" if a == "d" else "q_None" for a in string.ascii_lowercase},
+        "q_D":{a:"q_D" if a == "d" else "q_O" if a == "o" else "q_None" for a in string.ascii_lowercase},
+        "q_O":{a:"q_D" if a == "d" else "q_G" if a == "g" else "q_None" for a in string.ascii_lowercase},
+        "q_G":{a:"q_G" for a in string.ascii_lowercase}
+    },
+    "q_None",
+    {"q_None":False,"q_D":False,"q_O":False,"q_G":True}
+)
+cat = DFA(
+    ["q_None","q_C","q_A","q_T"],
+    string.ascii_lowercase,
+    {
+        "q_None":{a:"q_C" if a == "c" else "q_None" for a in string.ascii_lowercase},
+        "q_C":{a:"q_C" if a == "c" else "q_A" if a == "a" else "q_None" for a in string.ascii_lowercase},
+        "q_A":{a:"q_C" if a == "c" else "q_T" if a == "t" else "q_None" for a in string.ascii_lowercase},
+        "q_T":{a:"q_T" for a in string.ascii_lowercase}
+    },
+    "q_None",
+    {"q_None":False,"q_C":False,"q_A":False,"q_T":True}
+)
+
+DFANone = DFA(
+    ["D_None"],
+    "01",
+    {"D_None":{"0":"D_None","1":"D_None"}},
+    "D_None",
+    {"D_None":False}
+)
+
+def decorate(s,final=False):
+    a = "".join(["=" for i in range(50)])
+    spaces = " ".join(['' for i in range(100)])
+    def wrap(func):
+        def _():
+            print(f"{a}{s}{a}"[math.floor(len(s)/2):-math.ceil(len(s)/2)-2]+"\\\\")
+            try:
+                func()
+                print(f"||{s} PASSED{''.join([' ' for i in range(100)])}"[:98]+"||")
+            except AssertionError as e:
+                print(f"||AssertionError: {e}{spaces}"[:98]+"||")
+                if(not final):
+                    assert False, f"{s}: {e}"
+            finally:
+                print("\\\\" + "".join(["_" for i in range(100)])[2:])
+        return _
+    return wrap
+
+@decorate("DFS_TEST")
+def test_DFS():
+    assert (DFS(dog) == "\"dog\""), "DFS returned not a dog string"
+    assert (DFS(DFANone) == False), "DFS Returned a string when it should not have"
+    assert (DFS(~DFANone) == "\"\"") ,"DFS Returned not an empty string when it should have"
+
+@decorate("TEST_COMPLEMEMT")
+def test_complement():
+    assert ((~dog).iterate_DFA("dog") == False), "Returned True on \"dog\" dog complement"
+    assert ((~dog).iterate_DFA("doo") == True), "Returned False on \"do\" dog compliment"
+    assert ((~(~dog)) == dog), "Returned that dog complement complement is not equal to dog"
+    assert ((~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" cat complement"
+    assert ((~cat).iterate_DFA("caa") == True), "Returned False on \"caa\" cat complement"
+    assert ((~(~cat)) == cat), "Returned that cat complement complement is not equal to cat"
+    assert ((~odd).iterate_DFA("1") == False), "Returned True on \"1\" odd complement"
+    assert ((~odd).iterate_DFA("11") == True), "Returend False on \"11\" odd complment"
+    assert ((~(~odd)) == odd), "Returned rthat odd complement complement is not equal to odd"
+
+@decorate("TEST_UNION")
+def test_union():
+    assert ((dog | cat).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union cat"
+    assert ((dog | cat).iterate_DFA("cat") == True), "Returned False on \"cat\" dog union cat"
+    assert ((dog |~dog).iterate_DFA("") == True), "Returned False on \"\" dog union complement dog"
+    assert ((dog |~dog).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union complement dog"
+    assert ((cat |~cat).iterate_DFA("") == True), "Returned False on \"\" cat union complement cat"
+    assert ((cat |~cat).iterate_DFA("cat") == True), "Returned False on \"cat\" cat union complement cat"
+    assert ((dog |~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" dog union complement cat"
+    assert ((dog |~cat).iterate_DFA("dog") == True), "Returned False on \"dog\" dog union complement cat"
+    assert ((dog |~cat).iterate_DFA("doo") == True), "Returned False on \"doo\" dog union complement cat"
+
+@decorate("TEST_INTERSECT")
+def test_intersect():
+    assert ((dog & cat).iterate_DFA("dogcat") == True), "Returned False on \"dogcat\" on dog intersect cat"
+    assert ((dog & cat).iterate_DFA("catdog") == True), "Catdog doesnt exist.... "
+    assert ((dog & ~cat).iterate_DFA("dog") == True), "Returned False on \"dog\" on dog intersect complement cat"
+    assert ((dog & ~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" on dog intersect complement cat"
+    assert ((~dog & ~cat).iterate_DFA("cado") == True), "Returned False on \"cado\" on complement cat intersect complement dog"
+    assert ((~dog & ~cat).iterate_DFA("cat") == False), "Returned True on \"cat\" on complement cat intersect complement dog"
+    assert ((dog & dog) == dog), "Returned that dog & dog != dog"
+    assert ((dog & cat) <= dog), "returned that dog & cat isnt a subset of dog"
+
+@decorate("TEST_SUBSET")
+def test_subset():
+    assert ((dog & cat) <= dog), "dog and cat say they arent a subset of dog"
+    assert (dog <= (dog | cat)), "dog says its not a subset of dog or cat"
+    assert (not cat <= dog), "cat says its a subset of dog"
+    assert (not dog <= cat), "dog says its a subset of cat"
+    assert (cat <= cat), "cat says its not a subseet of cat"
+    assert (not ~cat <= cat), "~cat says its a subset of cat"
+    assert (not ~dog <= dog), "~dog says its a subset of dog"
+    assert (not dog <= (cat & dog)), "dog says it s asubset of cat-dog"
+    assert (dog <= (dog | cat)), "dog|cat says its a subset of dog"
+@decorate("TEST_EQUALITY")
+def test_equality():
+    assert not dog == cat, "dog is saying its a cat"
+    assert not cat == dog, "cat is saying its a dog"
+    assert dog == dog, "dog is saying its not a dog"
+    assert cat == cat, "cat is saying its not a cat"
+    assert not dog == ~dog, "dog is saying its equal to not dog"
+    assert not cat == ~cat, "cat is saying its equal to not cat"
+    assert cat & dog == cat & dog, "cat-dog is saying its not cat-dog"
+@decorate("TEST_SUITE",True)
+def all_tests():
+    test_DFS()
+    test_complement()
+    test_union()
+    test_intersect()
+    test_subset()
+    test_equality()
+
+all_tests()
