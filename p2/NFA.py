@@ -1,4 +1,6 @@
 import math
+
+union = lambda A,B: list(set(A)|set(B))
 def decorate(s,final=False):
     a = "".join(["=" for i in range(50)])
     spaces = " ".join(['' for i in range(100)])
@@ -39,6 +41,17 @@ class NFA:
                 return False
             state = next_s
         return self.accepting[state] == boolean
+    def __or__(self,other):
+        tf = self.transition | other.transition
+        tf[""] = {"":[self.start_s,other.start_s]}
+        print(tf[""][""])
+        return NFA(
+            States=list(set([""])|set(self.states)|set(other.states)),
+            Alphabet=self.alpha,
+            Transition_function=tf,
+            Start_State="",
+            Accepting_States={"":False}|self.accepting|other.accepting
+        )
     
     def fork(self):
         return {self.start_s:DFS(self,self.start_s,[self.start_s])}
@@ -47,14 +60,16 @@ def DFS(nfa,state,traces):
     for key in nfa.transition[state]:
         for states in nfa.transition[state][key]:
             if(states not in traces):
-                if((val := DFS(nfa,states,traces+[states])) != None):
-                    current_dict[states] = val
+                val = DFS(nfa,states,traces+[states])
+                current_dict[states] = val if val != None else {}
             else:
                 current_dict[states]="loopback"
     if(len(current_dict) != 0):
         return current_dict
     return None
 
+def BackTrack(nfa,state,traces,string):
+    pass
 
 FizzBuzz = NFA(
     States=["initial","nmod3=1","nmod5=1","nmod3=2","nmod5=2","nmod3=0","nmod5=3","nmod5=4","nmod5=0"],
@@ -87,6 +102,21 @@ FizzBuzz = NFA(
     nmod3=2,nmod5=0
     fail   ,accepting
 """
+cogOrCat = NFA(
+    States=["initialc","cOG","cAT","A","T","O","G"],
+    Alphabet="abcdefghijklmnopqrstuvwxyz",
+    Transition_function={
+        "initialc":{"c":["cOG","cAT"]},
+        "cOG":{"o":["O"]},
+        "cAT":{"a":["A"]},
+        "O":{"g":["G"]},
+        "A":{"t":["T"]},
+        "G":{},
+        "T":{}
+    },
+    Start_State="initialc",
+    Accepting_States={"initialc":False,"cOG":False,"cAT":False,"A":False,"T":True,"O":False,"G":True}
+)
 @decorate("FizzBuzzTest")
 def FizzBuzzTest():
     assert FizzBuzz ** ("000",["initial","nmod3=1","nmod3=2","nmod3=0"],True), "Doesnt work"
@@ -94,11 +124,15 @@ def FizzBuzzTest():
 @decorate("ForkTest")
 def fork():
     print(FizzBuzz.fork())
-
+    print(cogOrCat.fork())
     assert True, "Didnt throw error"
+@decorate("UnionTest")
+def union():
+    print((FizzBuzz|cogOrCat).fork())
 
 @decorate("TestSuite",True)
 def test_suite():
     FizzBuzzTest()
     fork()
+    union()
 test_suite()
