@@ -52,7 +52,8 @@ class NFA:
             Start_State="",
             Accepting_States={"":False}|self.accepting|other.accepting
         )
-    
+    def backtrack(self, string):
+        return BackTrack(self,self.start_s,[],string)
     def fork(self):
         return {self.start_s:DFS(self,self.start_s,[self.start_s])}
 def DFS(nfa,state,traces):
@@ -68,8 +69,19 @@ def DFS(nfa,state,traces):
         return current_dict
     return None
 
+# traces are for epsilon in this
 def BackTrack(nfa,state,traces,string):
-    pass
+    if(string == ""):
+        return nfa.accepting[state]
+    char = string[0]
+    for states in nfa.transition[state][char]:
+        if(BackTrack(nfa,states,[], string[1:])):
+            return True
+    for states in nfa.transition[state][""]:
+        if states not in traces:
+            if(BackTrack(nfa,states,traces + [states], string)):
+                return True
+    return False
 
 FizzBuzz = NFA(
     States=["initial","nmod3=1","nmod5=1","nmod3=2","nmod5=2","nmod3=0","nmod5=3","nmod5=4","nmod5=0"],
@@ -130,9 +142,14 @@ def fork():
 def union():
     print((FizzBuzz|cogOrCat).fork())
 
+@decorate("BackTrackTest")
+def backtrack_test():
+    assert FizzBuzz.backtrack("000"), "backtrack returned false"
+    assert not FizzBuzz.backtrack("00"), "backtrack returned true"
 @decorate("TestSuite",True)
 def test_suite():
     FizzBuzzTest()
     fork()
     union()
+    backtrack_test()
 test_suite()
