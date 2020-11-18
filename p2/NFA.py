@@ -41,17 +41,16 @@ class NFA:
         return self.accepting[state] == boolean
     
     def fork(self):
-        return {self.start_s:DFS(self,self.start_s)}
-def DFS(nfa,state):
+        return {self.start_s:DFS(self,self.start_s,[self.start_s])}
+def DFS(nfa,state,traces):
     current_dict = {}
     for key in nfa.transition[state]:
-        temp_node = {}
         for states in nfa.transition[state][key]:
-            if((val := DFS(nfa,states)) != None):
-                temp_node[states] = val
-        if(len(temp_node) != 0):
-            current_dict[key] = temp_node
-    
+            if(states not in traces):
+                if((val := DFS(nfa,states,traces+[states])) != None):
+                    current_dict[states] = val
+            else:
+                current_dict[states]="loopback"
     if(len(current_dict) != 0):
         return current_dict
     return None
@@ -92,9 +91,14 @@ FizzBuzz = NFA(
 def FizzBuzzTest():
     assert FizzBuzz ** ("000",["initial","nmod3=1","nmod3=2","nmod3=0"],True), "Doesnt work"
     assert not FizzBuzz ** ("000",["initial","nmod3=1","nmod5=0"],False),"Doesnt work"
+@decorate("ForkTest")
+def fork():
+    print(FizzBuzz.fork())
+
+    assert True, "Didnt throw error"
 
 @decorate("TestSuite",True)
 def test_suite():
     FizzBuzzTest()
-
+    fork()
 test_suite()
