@@ -19,6 +19,9 @@ def decorate(s,final=False):
         return _
     return wrap
 
+class Tree(dict):
+    pass
+
 class NFA:
 
     def __init__(self, States=None, Alphabet=None, Transition_function=None, Start_State=None, Accepting_States=None,DFA=None):
@@ -52,6 +55,18 @@ class NFA:
             Start_State="",
             Accepting_States={"":False}|self.accepting|other.accepting
         )
+    def __add__(self,other):
+        tf = self.transition | other.transition
+        for each in self.accepting:
+            if(self.accepting[each]):
+                self.transition[each][""] = [other.start_s]
+        return NFA(
+            States=self.states+other.states,
+            Alphabet=self.alpha,
+            Transition_function=tf,
+            Start_State=self.start_s,
+            Accepting_States=other.accepting
+        )
     def backtrack(self, string):
         return BackTrack(self,self.start_s,[],string)
     def fork(self):
@@ -59,12 +74,15 @@ class NFA:
 def DFS(nfa,state,traces):
     current_dict = {}
     for key in nfa.transition[state]:
-        for states in nfa.transition[state][key]:
-            if(states not in traces):
-                val = DFS(nfa,states,traces+[states])
-                current_dict[states] = val if val != None else {}
-            else:
-                current_dict[states]="loopback"
+        try:
+            for states in nfa.transition[state][key]:
+                if(states not in traces):
+                    val = DFS(nfa,states,traces+[states])
+                    current_dict[states] = val if val != None else {}
+                else:
+                    current_dict[states]="loopback"
+        except:
+            pass
     if(len(current_dict) != 0):
         return current_dict
     return None
@@ -85,7 +103,7 @@ def BackTrack(nfa,state,traces,string):
 
 FizzBuzz = NFA(
     States=["initial","nmod3=1","nmod5=1","nmod3=2","nmod5=2","nmod3=0","nmod5=3","nmod5=4","nmod5=0"],
-    Alphabet=["0"],
+    Alphabet=["abcdefghijklmnopqrstuvwxyz0"],
     Transition_function={
         "initial":{"":[],"0":["nmod3=1","nmod5=1"]},
         "nmod3=1":{"":[],"0":["nmod3=2"]},
@@ -116,7 +134,7 @@ FizzBuzz = NFA(
 """
 cogOrCat = NFA(
     States=["initialc","cOG","cAT","A","T","O","G"],
-    Alphabet="abcdefghijklmnopqrstuvwxyz",
+    Alphabet="abcdefghijklmnopqrstuvwxyz0",
     Transition_function={
         "initialc":{"c":["cOG","cAT"]},
         "cOG":{"o":["O"]},
@@ -146,10 +164,15 @@ def union():
 def backtrack_test():
     assert FizzBuzz.backtrack("000"), "backtrack returned false"
     assert not FizzBuzz.backtrack("00"), "backtrack returned true"
+@decorate("ConcatenateTest")
+def concat_test():
+    print((FizzBuzz+cogOrCat).fork())
+    assert True, "temporary"
 @decorate("TestSuite",True)
 def test_suite():
     FizzBuzzTest()
     fork()
     union()
     backtrack_test()
+    concat_test()
 test_suite()
