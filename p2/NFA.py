@@ -47,7 +47,6 @@ class NFA:
     def __or__(self,other):
         tf = self.transition | other.transition
         tf[""] = {"":[self.start_s,other.start_s]}
-        print(tf[""][""])
         return NFA(
             States=list(set([""])|set(self.states)|set(other.states)),
             Alphabet=self.alpha,
@@ -60,27 +59,29 @@ class NFA:
         for each in self.accepting:
             if(self.accepting[each]):
                 self.transition[each][""] = [other.start_s]
+        temp_accepting = self.accepting
+        temp_accepting.update(other.accepting)
         return NFA(
             States=self.states+other.states,
             Alphabet=self.alpha,
             Transition_function=tf,
             Start_State=self.start_s,
-            Accepting_States=other.accepting
+            Accepting_States={k:v if k in other.accepting else False for k,v in temp_accepting.items()}
         )
     def backtrack(self, string):
         return BackTrack(self,self.start_s,[],string)
     def fork(self):
-        return {self.start_s:DFS(self,self.start_s,[self.start_s])}
+        return {(self.start_s,self.accepting[self.start_s]):DFS(self,self.start_s,[self.start_s])}
 def DFS(nfa,state,traces):
-    current_dict = {}
+    current_dict = Tree()
     for key in nfa.transition[state]:
         try:
             for states in nfa.transition[state][key]:
                 if(states not in traces):
                     val = DFS(nfa,states,traces+[states])
-                    current_dict[states] = val if val != None else {}
+                    current_dict[(states,nfa.accepting[states])] = val if val != None else {}
                 else:
-                    current_dict[states]="loopback"
+                    current_dict[(states,nfa.accepting[states])]="loopback"
         except:
             pass
     if(len(current_dict) != 0):
@@ -116,9 +117,12 @@ FizzBuzz = NFA(
         "nmod5=0":{"":[],"0":["nmod5=1"]}
     },
     Start_State="initial",
-    Accepting_States={"nmod5=0":True,"nmod3=0":True,"initial":True,"nmod3=1":False,"nmod5=1":False,
+    Accepting_States={"initial":False,"nmod5=0":True,"nmod3=0":True,"initial":True,"nmod3=1":False,"nmod5=1":False,
                       "nmod3=2":False,"nmod5=2":False,"nmod5=3":False,"nmod5=4":False}
 )
+
+
+
 """
     0
     accepting
@@ -147,19 +151,120 @@ cogOrCat = NFA(
     Start_State="initialc",
     Accepting_States={"initialc":False,"cOG":False,"cAT":False,"A":False,"T":True,"O":False,"G":True}
 )
+
+Fizz = NFA(
+    States=["nmod3=0","nmod3=1","nmod3=2"],
+    Alphabet="0",
+    Transition_function={
+        "nmod3=0":{"0":["nmod3=1"]},
+        "nmod3=1":{"0":["nmod3=2"]},
+        "nmod3=2":{"0":["nmod3=0"]}
+    },
+    Start_State="nmod3=0",
+    Accepting_States={"nmod3=0":True,"nmod3=1":False,"nmod3=2":False}
+)
+
+Buzz = NFA(
+    States=["nmod5=0","nmod5=1","nmod5=2","nmod5=3","nmod5=4"],
+    Alphabet="0",
+    Transition_function={
+        "nmod5=0":{"0":["nmod5=1"]},
+        "nmod5=1":{"0":["nmod5=2"]},
+        "nmod5=2":{"0":["nmod5=3"]},
+        "nmod5=3":{"0":["nmod5=4"]},
+        "nmod5=4":{"0":["nmod5=0"]}
+    },
+    Start_State="nmod5=0",
+    Accepting_States={"nmod5=0":True,"nmod5=1":False,"nmod5=2":False,"nmod5=3":False,"nmod5=4":False} 
+)
+
+FizzBuzzUnion = NFA(
+    States=["","nmod5=0","nmod5=1","nmod5=2","nmod5=3","nmod5=4","nmod3=0","nmod3=1","nmod3=2"],
+    Alphabet="0",
+    Transition_function=
+    {
+        "":{"":["nmod3=0","nmod5=0"]},
+        "nmod3=0":{"0":["nmod3=1"]},
+        "nmod3=1":{"0":["nmod3=2"]},
+        "nmod3=2":{"0":["nmod3=0"]},
+        "nmod5=0":{"0":["nmod5=1"]},
+        "nmod5=1":{"0":["nmod5=2"]},
+        "nmod5=2":{"0":["nmod5=3"]},
+        "nmod5=3":{"0":["nmod5=4"]},
+        "nmod5=4":{"0":["nmod5=0"]}
+    },
+    Start_State="",
+    Accepting_States={
+        "":False,
+        "nmod3=0":True,
+        "nmod3=1":False,
+        "nmod3=2":False,
+        "nmod5=0":True,
+        "nmod5=1":False,
+        "nmod5=2":False,
+        "nmod5=3":False,
+        "nmod5=4":False
+    }
+)
+
 @decorate("FizzBuzzTest")
 def FizzBuzzTest():
     assert FizzBuzz ** ("000",["initial","nmod3=1","nmod3=2","nmod3=0"],True), "Doesnt work"
     assert not FizzBuzz ** ("000",["initial","nmod3=1","nmod5=0"],False),"Doesnt work"
 @decorate("ForkTest")
 def fork():
-    print(FizzBuzz.fork())
-    print(cogOrCat.fork())
+    assert (Fizz.fork() == 
+        {("nmod3=0",True):
+            {("nmod3=1",False):
+                {("nmod3=2",False):
+                    {("nmod3=0",True):
+                        "loopback"
+                    }
+                }
+            }
+        }), "Trees dont match"
+    assert (Buzz.fork() == 
+        {("nmod5=0",True):
+            {("nmod5=1",False):
+                {("nmod5=2",False):
+                    {("nmod5=3",False):
+                        {("nmod5=4",False):
+                            {("nmod5=0",True):
+                                "loopback"
+                            }
+                        }
+                    }
+                }
+            }
+        }), "Tree dont match boi"
+    assert ((Fizz | Buzz).fork() == 
+            {("",False):
+                {("nmod3=0",True):
+                    {("nmod3=1",False):
+                        {("nmod3=2",False):
+                            {("nmod3=0",True):
+                                "loopback"
+                            }
+                        }
+                    },
+                 ("nmod5=0",True):
+                    {("nmod5=1",False):
+                        {("nmod5=2",False):
+                            {("nmod5=3",False):
+                                {("nmod5=4",False):
+                                    {("nmod5=0",True):
+                                        "loopback"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }), "Tree threw error"
     assert True, "Didnt throw error"
 @decorate("UnionTest")
 def union():
-    print((FizzBuzz|cogOrCat).fork())
-
+    assert FizzBuzzUnion.fork() == (Fizz | Buzz).fork(), "Says union not equal to hand written union"
 @decorate("BackTrackTest")
 def backtrack_test():
     assert FizzBuzz.backtrack("000"), "backtrack returned false"
