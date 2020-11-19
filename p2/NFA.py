@@ -271,9 +271,27 @@ FizzBuzzUnion = NFA(
 
 @decorate("FizzBuzzTest")
 def FizzBuzzTest():
-    assert FizzBuzz ** ("000",["initial","nmod3=1","nmod3=2","nmod3=0"],True), "Doesnt work"
-    assert not FizzBuzz ** ("000",["initial","nmod3=1","nmod5=0"],False),"Doesnt work"
-@decorate("ForkTest")
+    assert FizzBuzz.backtrack("000"), "Returned False"
+    assert not FizzBuzz.backtrack("0000"), "Returned True"
+@decorate("doubleZeroTest")
+def doublezerotest():
+    assert doubleZero.backtrack("00"), "returned false"
+    assert not doubleZero.backtrack("0"), "returned true"
+@decorate("doubleOneTest")
+def doubleonetest():
+    assert doubleOne.backtrack("11"), "returned false"
+    assert not doubleOne.backtrack("1"), "returned true"
+@decorate("FizzBuzzUnion")
+def fizzbuzzunion():
+    assert FizzBuzzUnion.backtrack("000"),"returned false"
+    assert not FizzBuzzUnion.backtrack("0000"),"returned true"
+@decorate("NfaSuite")
+def nfasuite():
+    FizzBuzzTest()
+    doublezerotest()
+    doubleonetest()
+    fizzbuzzunion()
+@decorate("TreeTest")
 def fork():
     assert (Fizz.tree() == 
         {("nmod3=0",True):
@@ -334,9 +352,14 @@ def backtrack_test():
 @decorate("ConcatenateTest")
 def concat_test():
     assert (doubleZero + doubleOne).backtrack("0011"), "returned false"
+    assert not (doubleZero + doubleOne).backtrack("1100"), "returned true"
+    assert not (doubleOne + doubleZero).backtrack("0011"), "returned false"
+    assert (cogOrCat + FizzBuzz).backtrack("cat000"), "returned false"
+    assert not (cogOrCat + FizzBuzz).backtrack("cat00"), "returned true"
+    assert (cogOrCat + FizzBuzz).backtrack("cog000"), "returned false"
 @decorate("TestSuite",True)
 def test_suite():
-    FizzBuzzTest()
+    nfasuite()
     fork()
     union()
     backtrack_test()
