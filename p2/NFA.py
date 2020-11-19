@@ -175,6 +175,10 @@ FizzBuzz = NFA(
     nmod3=2,nmod5=0
     fail   ,accepting
 """
+
+
+
+
 cogOrCat = NFA(
     States=["initialc","cOG","cAT","A","T","O","G"],
     Alphabet="abcdefghijklmnopqrstuvwxyz0",
@@ -190,7 +194,12 @@ cogOrCat = NFA(
     Start_State="initialc",
     Accepting_States={"initialc":False,"cOG":False,"cAT":False,"A":False,"T":True,"O":False,"G":True}
 )
-
+"""
+    initialc->cOG->O->G
+            ->cAT->cAT->cAT
+    initialc->cAT->A->T
+            ->cOG->cOG->cOG
+"""
 Fizz = NFA(
     States=["nmod3=0","nmod3=1","nmod3=2"],
     Alphabet="0",
