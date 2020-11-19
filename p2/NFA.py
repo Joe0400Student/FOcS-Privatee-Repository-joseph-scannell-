@@ -59,14 +59,15 @@ class NFA:
         for each in self.accepting:
             if(self.accepting[each]):
                 self.transition[each][""] = [other.start_s]
-        temp_accepting = self.accepting
-        temp_accepting.update(other.accepting)
+        temp_accepting = other.accepting
+        for k in self.accepting:
+            temp_accepting[k] = False
         return NFA(
             States=self.states+other.states,
             Alphabet=self.alpha,
             Transition_function=tf,
             Start_State=self.start_s,
-            Accepting_States={k:v if k in other.accepting else False for k,v in temp_accepting.items()}
+            Accepting_States=temp_accepting
         )
     def backtrack(self, string):
         return BackTrack(self,self.start_s,[],string)
@@ -76,6 +77,8 @@ class NFA:
         if((v := fork_string(self,self.start_s,[],string)) != None):
             return {(self.start_s,self.accepting[self.start_s]):v}
         return None
+    def __repr__(self):
+        return f"{self.transition}"
     
 def fork_string(nfa,state,traces,string):
     current_dict = Tree()
@@ -84,9 +87,7 @@ def fork_string(nfa,state,traces,string):
         #print(string)
         if string[0] in nfa.transition[state]:
             for states in nfa.transition[state][string[0]]:
-                print(states)
                 if(states not in traces):
-                    print("here")
                     val = fork_string(nfa,states,traces+[state],string[1:])
                     if(val != None):
                         current_dict[(states,nfa.accepting[states])] = val
@@ -95,13 +96,16 @@ def fork_string(nfa,state,traces,string):
     if "" in nfa.transition[state]:
         #print("\"\"")
         for states in nfa.transition[state][""]:
-            print(states)
             if(states not in traces):
                 val = fork_string(nfa,states,traces+[state],string)
                 if(val != None):
                     current_dict[(states,nfa.accepting[states])] = val
             else:
                 current_dict[(states,nfa.accepting[states])] = "loopback"
+    if(len(current_dict) == 0 and len(string) == 0):
+        return None
+    if(len(current_dict) == 0):
+        return "END"
     return current_dict
 def DFS(nfa,state,traces):
     current_dict = Tree()
@@ -123,14 +127,18 @@ def DFS(nfa,state,traces):
 def BackTrack(nfa,state,traces,string):
     if(string == ""):
         return nfa.accepting[state]
+    #print(string[0])
     char = string[0]
-    for states in nfa.transition[state][char]:
-        if(BackTrack(nfa,states,[], string[1:])):
-            return True
-    for states in nfa.transition[state][""]:
-        if states not in traces:
-            if(BackTrack(nfa,states,traces + [states], string)):
+    if char in nfa.transition[state]:
+        for states in nfa.transition[state][char]:
+            #print(BackTrack(nfa,states,[],string[1:]))
+            if(BackTrack(nfa,states,[], string[1:])):
                 return True
+    if "" in nfa.transition[state]:
+        for states in nfa.transition[state][""]:
+            if states not in traces:
+                if(BackTrack(nfa,states,traces + [states], string)):
+                    return True
     return False
 
 FizzBuzz = NFA(
@@ -208,14 +216,29 @@ Buzz = NFA(
     Start_State="nmod5=0",
     Accepting_States={"nmod5=0":True,"nmod5=1":False,"nmod5=2":False,"nmod5=3":False,"nmod5=4":False} 
 )
-"""
 doubleZero = NFA(
     States=["not0","0","00"],
     Alphabet="01",
     Transition_function={
-        "not0":{
-        "0":{"0":
-"""
+        "not0":{"0":["0"],"1":["not0"]},
+        "0":{"0":["00"],"1":["not0"]},
+        "00":{}
+    },
+    Start_State="not0",
+    Accepting_States={"00":True,"0":False,"not0":False}
+)
+doubleOne = NFA(
+    States=["not1","1","11"],
+    Alphabet="01",
+    Transition_function={
+        "not1":{"0":["not1"],"1":["1"]},
+        "1":{"1":["11"],"0":["not1"]},
+        "11":{}
+    },
+    Start_State="not1",
+    Accepting_States={"not1":False,"1":False,"11":True}
+)
+
 FizzBuzzUnion = NFA(
     States=["","nmod5=0","nmod5=1","nmod5=2","nmod5=3","nmod5=4","nmod3=0","nmod3=1","nmod3=2"],
     Alphabet="0",
@@ -244,7 +267,7 @@ FizzBuzzUnion = NFA(
         "nmod5=4":False
     }
 )
-print(FizzBuzzUnion.fork("00"))
+
 
 @decorate("FizzBuzzTest")
 def FizzBuzzTest():
@@ -310,8 +333,7 @@ def backtrack_test():
     assert not FizzBuzz.backtrack("00"), "backtrack returned true"
 @decorate("ConcatenateTest")
 def concat_test():
-    print((FizzBuzz+cogOrCat).tree())
-    assert True, "temporary"
+    assert (doubleZero + doubleOne).backtrack("0011"), "returned false"
 @decorate("TestSuite",True)
 def test_suite():
     FizzBuzzTest()
