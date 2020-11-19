@@ -88,7 +88,7 @@ def fork_string(nfa,state,traces,string):
         if string[0] in nfa.transition[state]:
             for states in nfa.transition[state][string[0]]:
                 if(states not in traces):
-                    val = fork_string(nfa,states,traces+[state],string[1:])
+                    val = fork_string(nfa,states,[],string[1:])
                     if(val != None):
                         current_dict[(states,nfa.accepting[states])] = val
                 else:
@@ -277,6 +277,25 @@ FizzBuzzUnion = NFA(
     }
 )
 
+ing=NFA(
+    States=["initial","i","n","g"],
+    Alphabet="abcdefghijklmnopqrstuvwxyz",
+    Transition_function=
+    {
+        "initial":{a:["initial"] if a != "i" else ["i"] for a in "abcdefghijklmnopqrstuvwxyz"},
+        "i":{"n":["n"]},
+        "n":{"g":["g"]},
+        "g":{}
+    },
+    Start_State="initial",
+    Accepting_States={
+        "initial":False,
+        "i":False,
+        "n":False,
+        "g":True
+    }
+)
+
 
 @decorate("FizzBuzzTest")
 def FizzBuzzTest():
@@ -294,12 +313,17 @@ def doubleonetest():
 def fizzbuzzunion():
     assert FizzBuzzUnion.backtrack("000"),"returned false"
     assert not FizzBuzzUnion.backtrack("0000"),"returned true"
+@decorate("ingTest")
+def ingtest():
+    assert ing.backtrack("ing"),"returned false"
+    assert ing.backtrack("working"),"returned false"
 @decorate("NfaSuite")
 def nfasuite():
     FizzBuzzTest()
     doublezerotest()
     doubleonetest()
     fizzbuzzunion()
+    ingtest()
 @decorate("TreeTest")
 def fork():
     assert (Fizz.tree() == 
@@ -351,6 +375,7 @@ def fork():
                 }
             }), "Tree threw error"
     assert True, "Didnt throw error"
+    
 @decorate("UnionTest")
 def union():
     assert FizzBuzzUnion.tree() == (Fizz | Buzz).tree(), "Says union not equal to hand written union"
@@ -366,6 +391,34 @@ def concat_test():
     assert (cogOrCat + FizzBuzz).backtrack("cat000"), "returned false"
     assert not (cogOrCat + FizzBuzz).backtrack("cat00"), "returned true"
     assert (cogOrCat + FizzBuzz).backtrack("cog000"), "returned false"
+@decorate("ForkTest")
+def fork_Test():
+    assert (FizzBuzz.fork("000") == 
+        {("initial",True):
+            {("nmod3=1",False):
+                {("nmod3=2",False):
+                    "END"
+                },
+            ("nmod5=1",False):
+                {("nmod5=2",False):
+                    "END"
+                }
+            }
+        }), "Fork not correct tree"
+    assert (ing.fork("working") ==
+        {("initial",False):
+            {("initial",False):
+                {("initial",False):
+                    {("initial",False):
+                        {("initial",False):
+                            {("i",False):
+                                {("n",False):"END"}
+                            }
+                        }
+                    }
+                }
+            }
+        }),"not matching"
 @decorate("TestSuite",True)
 def test_suite():
     nfasuite()
@@ -373,4 +426,5 @@ def test_suite():
     union()
     backtrack_test()
     concat_test()
+    fork_Test()
 test_suite()
