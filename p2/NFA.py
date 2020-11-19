@@ -70,8 +70,39 @@ class NFA:
         )
     def backtrack(self, string):
         return BackTrack(self,self.start_s,[],string)
-    def fork(self):
+    def tree(self):
         return {(self.start_s,self.accepting[self.start_s]):DFS(self,self.start_s,[self.start_s])}
+    def fork(self,string):
+        if((v := fork_string(self,self.start_s,[],string)) != None):
+            return {(self.start_s,self.accepting[self.start_s]):v}
+        return None
+    
+def fork_string(nfa,state,traces,string):
+    current_dict = Tree()
+    #print(string)
+    if(len(string) != 0):
+        #print(string)
+        if string[0] in nfa.transition[state]:
+            for states in nfa.transition[state][string[0]]:
+                print(states)
+                if(states not in traces):
+                    print("here")
+                    val = fork_string(nfa,states,traces+[state],string[1:])
+                    if(val != None):
+                        current_dict[(states,nfa.accepting[states])] = val
+                else:
+                    current_dict[(states,nfa.accepting[states])] = "loopback"
+    if "" in nfa.transition[state]:
+        #print("\"\"")
+        for states in nfa.transition[state][""]:
+            print(states)
+            if(states not in traces):
+                val = fork_string(nfa,states,traces+[state],string)
+                if(val != None):
+                    current_dict[(states,nfa.accepting[states])] = val
+            else:
+                current_dict[(states,nfa.accepting[states])] = "loopback"
+    return current_dict
 def DFS(nfa,state,traces):
     current_dict = Tree()
     for key in nfa.transition[state]:
@@ -177,7 +208,14 @@ Buzz = NFA(
     Start_State="nmod5=0",
     Accepting_States={"nmod5=0":True,"nmod5=1":False,"nmod5=2":False,"nmod5=3":False,"nmod5=4":False} 
 )
-
+"""
+doubleZero = NFA(
+    States=["not0","0","00"],
+    Alphabet="01",
+    Transition_function={
+        "not0":{
+        "0":{"0":
+"""
 FizzBuzzUnion = NFA(
     States=["","nmod5=0","nmod5=1","nmod5=2","nmod5=3","nmod5=4","nmod3=0","nmod3=1","nmod3=2"],
     Alphabet="0",
@@ -206,6 +244,7 @@ FizzBuzzUnion = NFA(
         "nmod5=4":False
     }
 )
+print(FizzBuzzUnion.fork("00"))
 
 @decorate("FizzBuzzTest")
 def FizzBuzzTest():
@@ -213,7 +252,7 @@ def FizzBuzzTest():
     assert not FizzBuzz ** ("000",["initial","nmod3=1","nmod5=0"],False),"Doesnt work"
 @decorate("ForkTest")
 def fork():
-    assert (Fizz.fork() == 
+    assert (Fizz.tree() == 
         {("nmod3=0",True):
             {("nmod3=1",False):
                 {("nmod3=2",False):
@@ -223,7 +262,7 @@ def fork():
                 }
             }
         }), "Trees dont match"
-    assert (Buzz.fork() == 
+    assert (Buzz.tree() == 
         {("nmod5=0",True):
             {("nmod5=1",False):
                 {("nmod5=2",False):
@@ -237,7 +276,7 @@ def fork():
                 }
             }
         }), "Tree dont match boi"
-    assert ((Fizz | Buzz).fork() == 
+    assert ((Fizz | Buzz).tree() == 
             {("",False):
                 {("nmod3=0",True):
                     {("nmod3=1",False):
@@ -264,14 +303,14 @@ def fork():
     assert True, "Didnt throw error"
 @decorate("UnionTest")
 def union():
-    assert FizzBuzzUnion.fork() == (Fizz | Buzz).fork(), "Says union not equal to hand written union"
+    assert FizzBuzzUnion.tree() == (Fizz | Buzz).tree(), "Says union not equal to hand written union"
 @decorate("BackTrackTest")
 def backtrack_test():
     assert FizzBuzz.backtrack("000"), "backtrack returned false"
     assert not FizzBuzz.backtrack("00"), "backtrack returned true"
 @decorate("ConcatenateTest")
 def concat_test():
-    print((FizzBuzz+cogOrCat).fork())
+    print((FizzBuzz+cogOrCat).tree())
     assert True, "temporary"
 @decorate("TestSuite",True)
 def test_suite():
