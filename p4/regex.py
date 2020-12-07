@@ -1,4 +1,7 @@
 from NFA import NFA
+import string
+
+from random import choices
 
 class Regex:
     
@@ -37,5 +40,46 @@ class Regex:
         elif(self.type == 5):
             return f"({self.circ[0].__repr__()})⚬({self.cric[1].__repr__()})"
     
-    
+    def compile(self):
+        if(self.type == 0):
+            name = choices("abcdefghijklmnopqrstuvwxyz",k=20)
+            return NFA(
+                States=[name],
+                Alphabet=string.printable,
+                Transition_function={name:{}},
+                Start_State=name,
+                Accepting_States={name:False}
+            )
+        elif(self.type == 1):
+            name = choices("abcdefghijklmnopqrstuvwxyz",k=20)
+            name2 = choices("abcdefghijklmnopqrstuvwxyz",k=20)
+            return NFA(
+                States=[name,name2],
+                Alphabet=string.printable,
+                Transition_function={name:{c:name2 for c in string.printable},name2:{}},
+                Start_State=name,
+                Accepting_States={name:True,name2:False}
+            )
+        elif(self.type == 2):
+            name = choices("abcdefghijklmnopqrstuvwxyz",k=20)
+            name2 = choices("abcdefghijklmnopqrstuvwxyz",k=20)
+            name3 = choices("abcdefghijklmnopqrstuvwxyz",k=20)
+            return NFA(
+                States=[name,name2,name3],
+                Alphabet=string.printable,
+                Transition_function={
+                                        name:{self.char:name2},
+                                        name2:{c:name3 for c in string.printable},
+                                        name3:{}
+                },
+                Start_State = name,
+                Accepting_States={name:False,name2:True,name3:False}
+            )
+        elif(self.type == 3):
+            return self.union[0].compile() | self.union[1].compile()
+        elif(self.type == 4):
+            return self.star[0].compile().kleene_star()
+        else
+            return self.circ[0].compile() + self.circ[1].compile()
+
 

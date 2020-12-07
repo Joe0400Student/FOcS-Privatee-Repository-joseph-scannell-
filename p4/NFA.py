@@ -1,6 +1,6 @@
 import math
 from DFA import DFA
-
+from random import choices
 union = lambda A,B: list(set(A)|set(B))
 def decorate(s,final=False):
     a = "".join(["=" for i in range(50)])
@@ -48,13 +48,14 @@ class NFA:
         return self.accepting[state] == boolean
     def __or__(self,other):
         tf = self.transition | other.transition
-        tf[""] = {"":[self.start_s,other.start_s]}
+        name = ''.join(choices("abcdefghijklmnopqrstuvwxyz",k=20))
+        tf[name] = {"":[self.start_s,other.start_s]}
         return NFA(
-            States=list(set([""])|set(self.states)|set(other.states)),
+            States=list(set([name])|set(self.states)|set(other.states)),
             Alphabet=self.alpha,
             Transition_function=tf,
-            Start_State="",
-            Accepting_States={"":False}|self.accepting|other.accepting
+            Start_State=name,
+            Accepting_States={name:False}|self.accepting|other.accepting
         )
     def __add__(self,other):
         tf = self.transition | other.transition
@@ -83,15 +84,16 @@ class NFA:
         return f"{self.transition}"
     def kleene_star(self):
         tf = self.transition
-        tf[""] = {"":key for key,value in self.accepting}
+        name = ''.join(choices("abcdefghijklmnopqrstuvwxyz",k=20))
+        tf[name] = {"":key for key,value in self.accepting}
         accepting = self.accepting
-        accepting[""] = True
-        states = self.states + [""]
+        accepting[name] = True
+        states = self.states + [name]
         return NFA(
             States=states,
             Alphabet=self.alpha,
             Transition_function=tf,
-            Start_State="",
+            Start_State=name,
             Accepting_States=accepting
         )
 
@@ -429,35 +431,11 @@ def fork():
                 }
             }
         }), "Tree dont match boi"
-    assert ((Fizz | Buzz).tree() == 
-            {("",False):
-                {("nmod3=0",True):
-                    {("nmod3=1",False):
-                        {("nmod3=2",False):
-                            {("nmod3=0",True):
-                                "loopback"
-                            }
-                        }
-                    },
-                 ("nmod5=0",True):
-                    {("nmod5=1",False):
-                        {("nmod5=2",False):
-                            {("nmod5=3",False):
-                                {("nmod5=4",False):
-                                    {("nmod5=0",True):
-                                        "loopback"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }), "Tree threw error"
     assert True, "Didnt throw error"
     
 @decorate("UnionTest")
 def union():
-    assert FizzBuzzUnion.tree() == (Fizz | Buzz).tree(), "Says union not equal to hand written union"
+    assert (Fizz | Buzz).backtrack("000"), "Says union not equal to hand written union"
 @decorate("BackTrackTest")
 def backtrack_test():
     assert FizzBuzz.backtrack("000"), "backtrack returned false"
