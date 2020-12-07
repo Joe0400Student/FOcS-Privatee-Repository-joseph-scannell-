@@ -1,4 +1,5 @@
 import math
+from DFA import DFA
 
 union = lambda A,B: list(set(A)|set(B))
 def decorate(s,final=False):
@@ -21,6 +22,7 @@ def decorate(s,final=False):
 
 class Tree(dict):
     pass
+
 
 class NFA:
 
@@ -92,6 +94,71 @@ class NFA:
             Start_State="",
             Accepting_States=accepting
         )
+
+    def closure(self,state):
+        return closure(state,self.transition,[])
+
+    def any_accept(self,states):
+        for state in states:
+            if(self.accepting[state]):
+                return True
+        return False
+
+def closure(state,transfer_function,been_to):
+    if(state in been_to):
+        return []
+    tmp = [state]
+    if("" in transfer_function[state]):
+        for each in transfer_function[state][""]:
+            tmp += closure(transfer_function[state][""],transfer_function,been_to + [state])
+    return tmp
+
+def close_all(nfa, states):
+    tmp = []
+    for each in states:
+        tmp = list(set(nfa.closure(each)) | set(tmp))
+    return tmp
+
+def generate_union_dict(dicts, alphabet):
+    tmp = {}
+    for char in alphabet:
+        char_set = []
+        for dictionary in dicts:
+            if char in dictionary:
+                char_set = list(set(char_set)|set(dictionary[char]))
+        tmp[char] = tuple(char_set)
+    return tmp
+def get_all_tuples(dictionary):
+    return [dictionary[k] for k in dictionary for char in dictionary[k]]
+def compile(nfa: NFA) -> DFA:
+    start_state = tuple(nfa.closure(nfa.start_s))
+    states = [start_state]
+    generated_states = []
+    transfer_function = {}
+    current_state = start_state
+    while(len(generated_states) != len(states)):
+        set_dict = []
+        for state in current_state:
+            tmp_inner_dict = {}
+            inner_dict = nfa.transition[state]
+            for character in nfa.alpha:
+                if(character in inner_dict):
+                    tmp_inner_dict[character] = close_all(nfa,inner_dict[character])
+            set_dict.append(tmp_inner_dict)
+        union_dict = generate_union_dict(set_dict,nfa.alpha)
+        for char in nfa.alpha:
+            if(char not in union_dict):
+                union_dict[char] = current_state
+        transfer_function[current_state] = union_dict
+        all_tuples = get_all_tuples(union_dict)
+        states = list(set(states)|set(all_tuples))
+        generated_states += [current_state]
+        diffs = set(states) - set(generated_states)
+        if(len(list(diffs)) != 0):
+            current_state = list(diffs)[0]
+    accepting = {state: nfa.any_accept(state) for state in states}
+    return DFA(states,nfa.alpha,transfer_function,start_state,accepting)
+
 def fork_string(nfa,state,traces,string):
     current_dict = Tree()
     #print(string)
@@ -155,7 +222,7 @@ def BackTrack(nfa,state,traces,string):
 
 FizzBuzz = NFA(
     States=["initial","nmod3=1","nmod5=1","nmod3=2","nmod5=2","nmod3=0","nmod5=3","nmod5=4","nmod5=0"],
-    Alphabet=["abcdefghijklmnopqrstuvwxyz0"],
+    Alphabet="abcdefghijklmnopqrstuvwxyz0",
     Transition_function={
         "initial":{"":[],"0":["nmod3=1","nmod5=1"]},
         "nmod3=1":{"":[],"0":["nmod3=2"]},
@@ -431,6 +498,24 @@ def fork_Test():
                 }
             }
         }),"not matching"
+
+
+@decorate("CompileEdges")
+def compile_edges():
+    compile(FizzBuzz)
+    compile(ing)
+    compile(Fizz)
+    compile(Buzz)
+
+@decorate("Compile")
+def compile_test():
+    assert compile(FizzBuzz).iterate_DFA("000"), "Returned False when it shouldnt have"
+
+@decorate("CompileSuite")
+def compile_suite():
+    compile_edges()
+    compile_test()
+
 @decorate("TestSuite",True)
 def test_suite():
     nfasuite()
@@ -439,4 +524,5 @@ def test_suite():
     backtrack_test()
     concat_test()
     fork_Test()
+    compile_suite()
 test_suite()
