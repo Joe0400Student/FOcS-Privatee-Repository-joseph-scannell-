@@ -1,5 +1,6 @@
-from NFA import NFA
+from NFA import NFA, compile
 import string
+from DFA import DFS
 
 from random import choices
 
@@ -83,3 +84,7 @@ class Regex:
             return self.circ[0].compile() + self.circ[1].compile()
 
 
+    def generator(self):
+        dfa = compile(self.compile())
+        return DFS(dfa,dfa.SS,[],[])
+    
