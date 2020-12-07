@@ -88,3 +88,6 @@ class Regex:
         dfa = compile(self.compile())
         return DFS(dfa,dfa.SS,[],[])
     
+    def __eq__(self,other):
+        return compile(self.compiler()) == compile(other.compile())
+    
