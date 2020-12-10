@@ -19,7 +19,7 @@ class Regex:
         pass
 
     def test(self, other):
-        return compile(self.compile()) == compile(other.compile())
+        return self.compile().compile() == other.compile().compile()
     
     def generate(self):
         return DFS((v := self.compile()),v.SS,[],[])
