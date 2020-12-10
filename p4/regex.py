@@ -18,7 +18,7 @@ class Regex:
     def compile(self):
         pass
 
-    def __eq__(self, other):
+    def test(self, other):
         return compile(self.compile()) == compile(other.compile())
     
     def generate(self):
@@ -232,6 +232,11 @@ any_upper = PatternBuilder(f"|{upper_case}]")
 
 @decorate("KleinTest")
 def klein_test():
+    """
+    first is any length 0 character
+    second is a string completely consisting of 1001
+    third is a string that follows the fizz buzz property
+    """
     n_0s = PatternBuilder("*|0]").compile().compile()
     n_1s = PatternBuilder("*|(10](01]]").compile().compile()
     n_2s = PatternBuilder("|*(000]*(00000]]").compile().compile()
@@ -244,14 +249,18 @@ def compiler_test():
 
 @decorate("Equality_Tester")
 def equality_checker():
-    assert PatternBuilder("(abc]") == PatternBuilder("(abc]"), "Returned False"
-klein_test()
+    assert not PatternBuilder("*|(10](01]]").test(PatternBuilder("|0]")), " Returned True"
+    assert not PatternBuilder("*(abc]").test(PatternBuilder("(abc]")), "Returned True"
+@decorate("LargePatternCompiler")
+def largest_pattern():
+    email_tester = PatternBuilder("(|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ]*|abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]@|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]*|abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789].|(com](org](gov]]]").compile().compile()
+    assert (None != DFS(email_tester,email_tester.SS,[],[])), "Returned None, no possible regex pattern"
 
-ends_wth = PatternBuilder("(*|01]|ab]]").compile().compile()
-while(True):
-    print(ends_wth.iterate_DFA(input("enter here : ")))
-
-#email_tester = PatternBuilder("(|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ]*|abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]@|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]*|abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789].|(com](org](gov]]]").compile().compile()
-#print(DFS(email_tester,email_tester.SS,[],[]))
 #print("compiled")
 #print(email_tester.iterate_DFA(input("enter a email address here!: ")))
+@decorate("RegexTestSuite",True)
+def regex_test_suite():
+    compiler_test()
+    equality_checker()
+    largest_pattern()
+regex_test_suite()

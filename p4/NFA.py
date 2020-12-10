@@ -140,8 +140,6 @@ class NFA:
         table[looping_state] = {c: looping_state for c in self.alpha}
         for value in table:
             for c in table[value]:
-                if('g' not in [*table[value]]):
-                    print(value)
                 if(table[value][c] == None):
                     table[value][c] = looping_state
         return DFA([*table],self.alpha,table,ss,accepting)
@@ -344,7 +342,7 @@ def BackTrack(nfa,state,traces,string):
 
 FizzBuzz = NFA(
     States=["initial","nmod3=1","nmod5=1","nmod3=2","nmod5=2","nmod3=0","nmod5=3","nmod5=4","nmod5=0"],
-    Alphabet="abcdefghijklmnopqrstuvwxyz0",
+    Alphabet="0",
     Transition_function={
         "initial":{"":[],"0":["nmod3=1","nmod5=1"]},
         "nmod3=1":{"":[],"0":["nmod3=2"]},
@@ -614,6 +612,49 @@ def compile_suite():
     compile_edges()
     compile_test()
 
+@decorate("NFACompairsonToDFA")
+def tester():
+#    print(FizzBuzz.compile().SS)
+    d = [("initial",),("nmod3=1","nmod5=1"),("nmod3=2","nmod5=2"),("nmod3=0","nmod5=3"),("nmod3=1","nmod5=4"),("nmod3=2","nmod5=0"),("nmod3=0","nmod5=1"),("nmod3=1","nmod5=2"),("nmod3=2","nmod5=3"),("nmod3=0","nmod5=4"),("nmod3=1","nmod5=0"),("nmod3=2","nmod5=1"),("nmod3=0","nmod5=2"),("nmod3=1","nmod5=3"),("nmod3=2","nmod5=4"),("nmod3=0","nmod5=0")]
+    tf = {
+        ("initial",):{"0":("nmod3=1","nmod5=1")},
+        ("nmod3=1","nmod5=1"):{"0":("nmod3=2","nmod5=2")},
+        ("nmod3=2","nmod5=2"):{"0":("nmod3=0","nmod5=3")},
+        ("nmod3=0","nmod5=3"):{"0":("nmod3=1","nmod5=4")},
+        ("nmod3=1","nmod5=4"):{"0":("nmod3=2","nmod5=0")},
+        ("nmod3=2","nmod5=0"):{"0":("nmod3=0","nmod5=1")},
+        ("nmod3=0","nmod5=1"):{"0":("nmod3=1","nmod5=2")},
+        ("nmod3=1","nmod5=2"):{"0":("nmod3=2","nmod5=3")},
+        ("nmod3=2","nmod5=3"):{"0":("nmod3=0","nmod5=4")},
+        ("nmod3=0","nmod5=4"):{"0":("nmod3=1","nmod5=0")},
+        ("nmod3=1","nmod5=0"):{"0":("nmod3=2","nmod5=1")},
+        ("nmod3=2","nmod5=1"):{"0":("nmod3=0","nmod5=2")},
+        ("nmod3=0","nmod5=2"):{"0":("nmod3=1","nmod5=3")},
+        ("nmod3=1","nmod5=3"):{"0":("nmod3=2","nmod5=4")},
+        ("nmod3=2","nmod5=4"):{"0":("nmod3=0","nmod5=0")},
+        ("nmod3=0","nmod5=0"):{"0":("nmod3=1","nmod5=1")}
+    }
+    accepting = {
+        ("initial",):True,
+        ("nmod3=1","nmod5=1"):False,
+        ("nmod3=2","nmod5=2"):False,
+        ("nmod3=0","nmod5=3"):True,
+        ("nmod3=1","nmod5=4"):False,
+        ("nmod3=2","nmod5=0"):True,
+        ("nmod3=0","nmod5=1"):True,
+        ("nmod3=1","nmod5=2"):False,
+        ("nmod3=2","nmod5=3"):False,
+        ("nmod3=0","nmod5=4"):True,
+        ("nmod3=1","nmod5=0"):True,
+        ("nmod3=2","nmod5=1"):False,
+        ("nmod3=0","nmod5=2"):True,
+        ("nmod3=1","nmod5=3"):False,
+        ("nmod3=2","nmod5=4"):False,
+        ("nmod3=0","nmod5=0"):True
+    }
+    D = DFA(d,"0",tf,d[0],accepting)
+    v = FizzBuzz.compile()
+    assert D == v,  "D did not equal v"
 @decorate("TestSuite",True)
 def test_suite():
     nfasuite()
@@ -623,4 +664,6 @@ def test_suite():
     concat_test()
     fork_Test()
     compile_suite()
+    tester()
 test_suite()
+
