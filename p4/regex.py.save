@@ -2,7 +2,6 @@ from NFA import *
 from string import printable
 import random
 from DFA import *
-from string import ascii_uppercase as upper_case
 
 WHOLE_ASCII = printable
 
@@ -20,10 +19,6 @@ class Regex:
 
     def __eq__(self, other):
         return compile(self.compile()) == compile(other.compile())
-    
-    def generate(self):
-        return DFS((v := self.compile()),v.SS,[],[])
-
 
 class RegexEpsilon(Regex):
 
@@ -163,22 +158,19 @@ def MakeUnion(string) -> Regex:
 
 
 def MakeConcat(string) -> Regex:
-    regex_stack = []
+    current_regex = RegexEpsilon()
+    #print("called")
     while((value := string.__next__()) != "]"):
         if(value == "("):
-            regex_stack.append(MakeConcat(string))
+            current_regex = RegexConcat(current_regex,MakeConcat(string))
         elif(value == "|"):
-            regex_stack.append(MakeUnion(string))
+            current_regex = RegexConcat(current_regex,MakeUnion(string))
         elif(value == "*"):
-            regex_stack.append(MakeStar(string))
+            current_regex = RegexConcat(current_regex,MakeStar(string))
         else:
-            regex_stack.append(RegexChar(value))
-    value = RegexConcat(regex_stack[-2],regex_stack[-1])
-    regex_stack = regex_stack[:-2]
-    while(len(regex_stack)):
-        value = RegexConcat(regex_stack[-1],value)
-        regex_stack = regex_stack[:-1]
-    return value
+            #print("Here")
+            current_regex = RegexConcat(current_regex,RegexChar(value))
+    return current_regex
 def MakeStar(string) -> Regex:
     if((value := string.__next__()) == "("):
         return RegexStar(MakeConcat(string))
@@ -188,70 +180,7 @@ def MakeStar(string) -> Regex:
         return RegexStar(MakeStar(string))
 
 
-tmp = PatternBuilder("*|abcdxyz]")
-#compiled = tmp.compile().compile()
-#print(str(tmp))
-#while(True):
-#   print(PatternBuilder("(ab]").compile().compile().iterate_DFA(input()))
-#   print(compiled.iterate_DFA(input()))
-
-
-any_lower = PatternBuilder("|abcdefghijklmnopqrstuvwxyz]")
-any_digit = PatternBuilder("|0123456789]")
-any_numeric = RegexStar(any_digit)
-any_upper = PatternBuilder(f"|{upper_case}]")
-
-#print(any_lower.compile().compile().iterate_DFA(input("lower case: ")))
-#print(any_digit.compile().compile().iterate_DFA(input("digit: ")))
-#print(any_numeric.compile().compile().iterate_DFA(input("any number: ")))
-#print(any_upper.compile().compile().iterate_DFA(input("any upper: ")))
-#print(PatternBuilder("(*|01]|(00](11]]]").compile().compile().iterate_DFA("010011"))
-"""print(DFS((tmp:=RegexConcat(
-    RegexStar(
-        RegexUnion(
-            RegexChar("0"),
-            RegexChar("1")
-        )
-    ),
-    RegexUnion(
-        RegexConcat(
-            RegexChar("1"),
-            RegexChar("1")
-        ),
-        RegexConcat(
-            RegexChar("."),
-            RegexChar(".")
-        )
-    )
-).compile().compile()),tmp.SS,[],[]))
-"""
-
-#v = (PatternBuilder(f"*|(ing](ly]]").compile().compile())
-#print("compiled")
-#print(v.iterate_DFA(input()))
-
-@decorate("KleinTest")
-def klein_test():
-    n_0s = PatternBuilder("*|0]").compile().compile()
-    n_1s = PatternBuilder("*|(10](01]]").compile().compile()
-    n_2s = PatternBuilder("|*(000]*(00000]]").compile().compile()
-    assert n_0s.iterate_DFA("0"), "returned false"
-    assert not n_0s.iterate_DFA("1"), "returned true"
-    assert n_1s.iterate_DFA("1001"), "retuned false"
-@decorate("TestCompiler")
-def compiler_test():
-    klein_test()
-
-@decorate("Equality_Tester")
-def equality_checker():
-    assert PatternBuilder("(abc]") == PatternBuilder("(abc]"), "Returned False"
-klein_test()
-
-ends_wth = PatternBuilder("(*|01]|ab]]").compile().compile()
-while(True):
-    print(ends_wth.iterate_DFA(input("enter here : ")))
-
-#email_tester = PatternBuilder("(|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ]*|abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]@|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]*|abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789].|(com](org](gov]]]").compile().compile()
-#print(DFS(email_tester,email_tester.SS,[],[]))
-#print("compiled")
-#print(email_tester.iterate_DFA(input("enter a email address here!: ")))
+value = PatternBuilder("((|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]*|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]]@|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]*|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMnOPQRSTUVWXYZ].com]")
+#value = PatternBuilder("((ab]c]")
+print(str(value))
+print(value.compile().compile().iterate_dfa("joe@gmail.com"))

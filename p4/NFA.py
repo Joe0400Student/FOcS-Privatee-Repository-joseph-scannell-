@@ -2,6 +2,7 @@ import math
 from DFA import DFA
 from random import choices
 union = lambda A,B: list(set(A)|set(B))
+
 def decorate(s,final=False):
     a = "".join(["=" for i in range(50)])
     spaces = " ".join(['' for i in range(100)])
@@ -85,15 +86,20 @@ class NFA:
     def kleene_star(self):
         tf = self.transition
         name = ''.join(choices("abcdefghijklmnopqrstuvwxyz",k=20))
-        tf[name] = {"":key for key,value in self.accepting}
+        tf[name] = {"":[self.start_s]}
+        for each in self.accepting:
+            if(self.accepting[each]):
+                if("" in tf[each]):
+                    tf[each][""] = tf[each][""] + [name]
+                else:
+                    tf[each][""] = [name]
         accepting = self.accepting
         accepting[name] = True
-        states = self.states + [name]
         return NFA(
-            States=states,
+            States=self.states,
             Alphabet=self.alpha,
-            Transition_function=tf,
             Start_State=name,
+            Transition_function=tf,
             Accepting_States=accepting
         )
 
@@ -105,16 +111,123 @@ class NFA:
             if(self.accepting[state]):
                 return True
         return False
+    def compile(self) -> DFA:
+        ss = self.closure(self.start_s)
+        
+        jobs = [ss]
+        table = {ss:{}}
+        
+        for job in jobs:
+            for c in self.alpha:
+                #print(f"{c}")
+                new_state = ()
+                for state in job:
+                    if(c in self.transition[state]):
+                        for tmp_state in self.transition[state][c]:
+                            new_state += self.closure(tmp_state)
+                new_state = tuple(sorted(no_duplicates(new_state)))
+                if(new_state == ()):
+                    table[job][c] = None
+                else:
+                    table[job][c] = new_state
+                    if(new_state not in jobs):
+                        jobs.append(new_state)
+                        table[new_state] = {}
+        looping_state = ("looping",) + (''.join(choices("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",k=40)),)
+        accepting = {looping_state:False}
+        for state in table:
+            accepting[state] = any(map(lambda c: self.accepting[c],state))
+        table[looping_state] = {c: looping_state for c in self.alpha}
+        for value in table:
+            for c in table[value]:
+                if('g' not in [*table[value]]):
+                    print(value)
+                if(table[value][c] == None):
+                    table[value][c] = looping_state
+        return DFA([*table],self.alpha,table,ss,accepting)
+"""    
+    def compile(self) -> DFA:
+        table = {}
+        start_state = tuple(sorted(self.closure(self.start_s)))
+        #print(len(start_state))
+        table = {state:{character:None for character in self.alpha}
+            for state in map(
+                lambda a: tuple(sorted(self.closure(a))) 
+                if type(a) != type((0,0)) else a,self.states)
+        }
+        table[start_state] = {a: None for a in self.alpha}
+        jobs = no_duplicates([states for states in table])
+#        print(len(jobs))
+        #input()
+        i = 0
+        for job in jobs:
+#            print(f"{i}:{len(jobs)}")
+            #print(job)
+#            print(jobs.index(job))
+            table[job] = process_job(self,job, self.transition)
+            for newly_generated in table[job].values():
+                if(newly_generated not in jobs and newly_generated != None):
+                    #print(type(newly_generated[0]))
+                    #input()
+                    #print(type(jobs[0][0]))
+                    jobs.append(newly_generated)
+                    table[newly_generated] = {c:None for c in self.alpha}
+            i += 1
+        #print("outside")
+        new_state = (''.join(choices("abcdefghijklmnopqrstuvwxyz1234567890_-\\",k=40)),)
+        table[new_state] = {a:new_state for a in self.alpha}
+        for key in table:
+            for char in table[key]:
+                if(table[key][char] == None):
+                    table[key][char] = new_state
+        accepting = {}
+        accepting[new_state] = False
+        for state in jobs:
+            accepting[state] = any(map(lambda a: self.accepting[a], state))
+        jobs.append(new_state)
+        return DFA(jobs,self.alpha,table,start_state,accepting)
+def process_job(nfa: NFA, state, transition_table: dict):
+    current_working_dict = {c:None for c in nfa.alpha}
+    for sub_jobs in state:
+        #print(sub_jobs)
+#        print(len(sub_jobs))
+        single_dict = get_single_state_dict(nfa,sub_jobs,transition_table)
+        for c in nfa.alpha:
+            if(current_working_dict[c] == None):
+                if(single_dict[c] != ()):
+                    current_working_dict[c] = single_dict[c]
+            else:
+                #print(current_working_dict[c])
+                #print(current_working_dict[c] + single_dict[c])
+                current_working_dict[c] = tuple(sorted(no_duplicates(current_working_dict[c] + single_dict[c])))
+    return current_working_dict
+
+def get_single_state_dict(nfa: NFA, state, dictionary: dict) -> dict:
+    tmp = {}
+    for c in nfa.alpha:
+        if(c in dictionary[state]):
+            temp = dictionary[state][c]
+            tmp[c] = tuple(no_duplicates([v for t in temp for v in nfa.closure(t)]))
+            #input()
+            #tmp[c] = tuple([v for v in map(lambda a: sorted(no_duplicates(nfa.closure(a))), dictionary[state][c])])
+        else:
+            tmp[c] = ()
+    #print(tmp[nfa.alpha[0]])
+    return tmp
+"""
+def no_duplicates(values):
+    return [v for v in {value:0 for value in values}]
 
 def closure(state,transfer_function,been_to):
-    if(state in been_to):
-        return []
-    tmp = [state]
-    if("" in transfer_function[state]):
-        for each in transfer_function[state][""]:
-            tmp += closure(transfer_function[state][""],transfer_function,been_to + [state])
-    return tmp
+    if("" not in transfer_function[state]):
+        return (state,)
+    tmp = (state,)
+    for states in transfer_function[state][""]:
+        if(states not in been_to + list(tmp)):
+            tmp += closure(states, transfer_function, been_to + list(tmp))
+    return tuple(sorted(no_duplicates(tmp)))
 
+    return tmp
 def close_all(nfa, states):
     tmp = []
     for each in states:
@@ -132,12 +245,19 @@ def generate_union_dict(dicts, alphabet):
     return tmp
 def get_all_tuples(dictionary):
     return [dictionary[k] for k in dictionary for char in dictionary[k]]
+
+
 def compile(nfa: NFA) -> DFA:
     start_state = tuple(nfa.closure(nfa.start_s))
     states = [start_state]
     generated_states = []
     transfer_function = {}
     current_state = start_state
+    trap_state = ''.join(choices("abcdefghijklmnopqrstuvwxyz",k=20))
+    states.append(trap_state)
+    generated_states.append(trap_state)
+    transfer_function[trap_state] = {c: trap_state for c in nfa.alpha}
+    current_state = states[0]
     while(len(generated_states) != len(states)):
         set_dict = []
         for state in current_state:
@@ -150,7 +270,7 @@ def compile(nfa: NFA) -> DFA:
         union_dict = generate_union_dict(set_dict,nfa.alpha)
         for char in nfa.alpha:
             if(char not in union_dict):
-                union_dict[char] = current_state
+                union_dict[char] = trap_state
         transfer_function[current_state] = union_dict
         all_tuples = get_all_tuples(union_dict)
         states = list(set(states)|set(all_tuples))
@@ -158,7 +278,7 @@ def compile(nfa: NFA) -> DFA:
         diffs = set(states) - set(generated_states)
         if(len(list(diffs)) != 0):
             current_state = list(diffs)[0]
-    accepting = {state: nfa.any_accept(state) for state in states}
+    accepting = {state: nfa.any_accept(state) if state != trap_state else False for state in states}
     return DFA(states,nfa.alpha,transfer_function,start_state,accepting)
 
 def fork_string(nfa,state,traces,string):
@@ -487,8 +607,8 @@ def compile_edges():
 
 @decorate("Compile")
 def compile_test():
-    assert compile(FizzBuzz).iterate_DFA("000"), "Returned False when it shouldnt have"
-
+    assert FizzBuzz.compile().iterate_DFA("000"), "Returned False when it shouldnt have"
+    assert not FizzBuzz.compile().iterate_DFA("0000"), "Returned True"
 @decorate("CompileSuite")
 def compile_suite():
     compile_edges()
